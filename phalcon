@@ -1,35 +1,30 @@
 FROM php:7.2-apache
 
-LABEL maintainer="Kaviarasan KK <kaviarasankk@gmail.com"
-LABEL version="1.0"
+LABEL MAINTAINER Kaviarasan KK <kk@auditshipment.com>
 
-RUN apt-get update && apt-get install -y \
-    cron \
-    anacron \
-    git \
-    libpcre3-dev \
-    libmcrypt-dev \
-    libxml2-dev \
-    zlib1g-dev \
-    libssh2-1 \
-    libssh2-1-dev \
-    libpng-dev \
-    --no-install-recommends \
-    && docker-php-ext-install -j$(nproc) pdo_mysql mbstring soap zip gd \
-    && cp /usr/local/bin/php /usr/bin/
-
-# Install PECL extensions
-RUN pecl install xdebug && pecl install mcrypt-1.0.1 && pecl install ssh2-1.1.2
-RUN docker-php-ext-enable xdebug mcrypt ssh2
-
-# Install Phalcon
-WORKDIR /usr/local/src
-RUN git clone https://github.com/phalcon/cphalcon.git --branch v3.3.1 --single-branch
-WORKDIR /usr/local/src/cphalcon/build
-RUN ./install
-
-WORKDIR /etc/php7/mods-available
-RUN echo 'extension=phalcon.so' >> phalcon.ini
-RUN docker-php-ext-enable phalcon
-
-WORKDIR /var/www/
+ARG PHALCON_VERSION=3.4.3
+ARG PHALCON_EXT_PATH=php7/64bits
+RUN  set -xe
+   &&  curl -LO https://github.com/phalcon/cphalcon/archive/v${PHALCON_VERSION}.tar.gz
+   &&  tar xzf ${PWD}/v${PHALCON_VERSION}.tar.gz
+   &&  cd ${PWD}/cphalcon-${PHALCON_VERSION}/build/
+   &&  ./install
+RUN  echo "extension=phalcon.so" > /usr/local/etc/php/conf.d/phalcon.ini
+RUN  pecl install mongodb
+RUN  echo "extension=mongodb.so" >> /usr/local/etc/php/conf.d/mongodb.ini
+RUN  apt-get update
+   &&  apt-get install -y zlib1g-dev
+   &&  apt-get install -y libpng-dev
+   &&  apt-get install -y libpcre3-dev
+   &&  apt-get install -y openssl
+   &&  apt-get install -y libpcre3-dev
+   &&  apt-get install nano
+RUN  docker-php-ext-install gettext
+   &&  docker-php-ext-install gd
+   &&  docker-php-ext-install json
+   &&  docker-php-ext-install mbstring
+   &&  docker-php-ext-install pdo_mysql
+   &&  docker-php-ext-install fileinfo
+   &&  docker-php-ext-install zip
+RUN  curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN  a2enmod rewrite
